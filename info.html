@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHYS · 射覆日志</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --gold: #c9a84c;
+    --dark-bg: #0f0f1a;
+    --card-bg: #1a1a30;
+    --text-primary: #f5f0e8;
+    --text-secondary: #a09880;
+    --success: #4a9c6f;
+    --fail: #c23a2b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(194, 58, 43, 0.03) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+  .container { max-width: 860px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+  .header { text-align: center; padding: 36px 0 24px; }
+  .header h1 {
+    font-family: 'Ma Shan Zheng', cursive; font-size: 40px;
+    color: var(--gold); letter-spacing: 10px;
+    text-shadow: 0 0 40px rgba(201, 168, 76, 0.15);
+  }
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 0 0 24px; opacity: 0.3; }
+
+  .nav-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; }
+  .nav-btn {
+    padding: 8px 20px; border: 1px solid rgba(201, 168, 76, 0.2);
+    border-radius: 8px; background: rgba(255,255,255,0.04);
+    color: var(--text-secondary); font-family: 'Noto Serif SC', serif;
+    font-size: 13px; cursor: pointer; text-decoration: none;
+    letter-spacing: 2px; transition: all 0.25s;
+  }
+  .nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .card {
+    background: var(--card-bg); border: 1px solid rgba(201, 168, 76, 0.12);
+    border-radius: 12px; padding: 24px 28px; margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 13px; color: var(--gold); letter-spacing: 4px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-title::before { content: '◆'; font-size: 7px; color: var(--fail); }
+
+  .log-list { display: flex; flex-direction: column; gap: 10px; }
+  .log-item {
+    padding: 14px 16px; background: rgba(255,255,255,0.015);
+    border-radius: 8px; border: 1px solid rgba(201, 168, 76, 0.06);
+    font-size: 12px; line-height: 1.8;
+  }
+  .log-item .log-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .log-item .log-ju { color: var(--gold); font-weight: 700; font-size: 13px; }
+  .log-item .log-time { color: var(--text-secondary); font-size: 11px; }
+  .log-item .log-result { padding: 1px 8px; border-radius: 8px; font-size: 10px; }
+  .log-item .log-result.hit { background: rgba(74, 156, 111, 0.12); color: var(--success); }
+  .log-item .log-result.miss { background: rgba(194, 58, 43, 0.12); color: var(--fail); }
+  .log-item .log-row { color: var(--text-secondary); font-size: 11px; }
+  .log-item .log-row span { color: var(--text-primary); }
+
+  .empty-state { text-align: center; color: var(--text-secondary); font-size: 12px; padding: 32px 0; }
+
+  .loading { text-align: center; padding: 24px; }
+  .loading-spinner {
+    display: inline-block; width: 24px; height: 24px;
+    border: 2px solid rgba(201, 168, 76, 0.15);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>射 覆 日 志</h1>
+  </div>
+  <div class="divider"></div>
+
+  <div class="nav-row">
+    <a href="/" class="nav-btn">◆ 进入射覆</a>
+    <button class="nav-btn" onclick="location.reload()">↻ 刷新日志</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">对局记录</div>
+    <div class="loading" id="loadingArea">
+      <div class="loading-spinner"></div>
+    </div>
+    <div class="log-list" id="logList"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">暂无对局记录</div>
+  </div>
+</div>
+
+<script>
+async function loadLogs() {
+  try {
+    var resp = await fetch('/api/logs?limit=20');
+    var data = await resp.json();
+    var logs = data.logs || [];
+
+    document.getElementById('loadingArea').style.display = 'none';
+
+    if (logs.length === 0) {
+      document.getElementById('emptyState').style.display = 'block';
+      return;
+    }
+
+    var list = document.getElementById('logList');
+    list.innerHTML = '';
+    logs.reverse().forEach(function(log) {
+      var item = document.createElement('div');
+      item.className = 'log-item';
+      var isHit = log['结果'] && log['结果'].includes('命中');
+      item.innerHTML =
+        '<div class="log-header">' +
+          '<span class="log-ju">局号 ' + (log.juNumber || '?') + '</span>' +
+          '<span class="log-result ' + (isHit ? 'hit' : 'miss') + '">' + (isHit ? '✓命中' : '✗偏差') + '</span>' +
+          '<span class="log-time">' + (log['时间'] || '') + '</span>' +
+        '</div>' +
+        '<div class="log-row">起卦：<span>' + (log['起卦方式'] || '') + '</span></div>' +
+        '<div class="log-row">卦象：<span>' + (log['卦象'] || '') + '</span></div>' +
+        '<div class="log-row">AI猜：<span>' + (log['AI猜测'] || '') + '</span>　谜底：<span>' + (log['真实谜底'] || '') + '</span></div>';
+      list.appendChild(item);
+    });
+  } catch(e) {
+    document.getElementById('loadingArea').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('emptyState').textContent = '日志加载失败：' + (e.message || '未知错误');
+  }
+}
+
+loadLogs();
+</script>
+</body>
+</html>

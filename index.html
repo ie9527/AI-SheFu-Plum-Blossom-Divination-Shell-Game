@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>射覆 · 梅花易数</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>射 覆</h1>
+    <div class="subtitle">— 梅 花 易 数 · 占 断 物 象 —</div>
+  </div>
+  <div class="top-nav">
+    <a href="/MHYS">查看日志 →</a>
+  </div>
+  <div class="divider"></div>
+
+  <div class="game-area">
+    <div class="phase-indicator" id="phaseIndicator">
+      <div class="phase-dot active" data-phase="input"><span class="dot"></span>起数</div>
+      <div class="phase-dot" data-phase="gua"><span class="dot"></span>演卦</div>
+      <div class="phase-dot" data-phase="reason"><span class="dot"></span>推理</div>
+      <div class="phase-dot" data-phase="clues"><span class="dot"></span>线索</div>
+      <div class="phase-dot" data-phase="guess"><span class="dot"></span>猜测</div>
+      <div class="phase-dot" data-phase="path"><span class="dot"></span>思路</div>
+      <div class="phase-dot" data-phase="reveal"><span class="dot"></span>揭晓</div>
+    </div>
+
+    <div class="card visible" id="stageInput" style="transition-delay:0.1s">
+      <div class="input-section">
+        <div class="num-input-group">
+          <span class="input-label">上卦</span>
+          <input type="text" id="inpShang" maxlength="3" placeholder="0" inputmode="numeric" autocomplete="off">
+          <span class="input-sublabel">÷ 8 取余</span>
+        </div>
+        <div class="num-input-group">
+          <span class="input-label">下卦</span>
+          <input type="text" id="inpXia" maxlength="3" placeholder="0" inputmode="numeric" autocomplete="off">
+          <span class="input-sublabel">÷ 8 取余</span>
+        </div>
+        <div class="num-input-group">
+          <span class="input-label">动爻</span>
+          <input type="text" id="inpDong" maxlength="3" placeholder="0" inputmode="numeric" autocomplete="off">
+          <span class="input-sublabel">÷ 6 取余</span>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-random" id="btnRandom">随 机</button>
+        <button class="btn btn-time" id="btnTime">时 间</button>
+        <button class="btn btn-primary" id="btnStart" disabled>开 始</button>
+      </div>
+    </div>
+
+    <div class="card" id="stageGua">
+      <div class="card-title">卦 象</div>
+      <div class="method-tag" id="methodTag" style="display:none;"></div>
+      <div class="nums-display" id="numsDisplay"></div>
+      <div class="gua-grid" id="guaGrid"></div>
+      <div class="tiyong-display" id="tiyongDisplay">
+        <div class="tiyong-item"><div class="label">体卦</div><div class="gua-symbol" id="tiSymbol">—</div><div class="gua-name" id="tiName">—</div></div>
+        <div class="tiyong-arrow">▸</div>
+        <div class="tiyong-relation" id="tiyongRelation">—</div>
+        <div class="tiyong-arrow">▸</div>
+        <div class="tiyong-item"><div class="label">用卦</div><div class="gua-symbol" id="yongSymbol">—</div><div class="gua-name" id="yongName">—</div></div>
+      </div>
+      <div class="breakdown-section" id="guaBreakdown"></div>
+      <div class="btn-row" id="aiInferBtnRow" style="display:none;">
+        <button class="btn btn-primary" id="btnAIInfer">AI 推 断</button>
+      </div>
+    </div>
+
+    <div class="card" id="stageReason">
+      <div class="card-title">推 理</div>
+      <div class="loading-area" id="loadingArea">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">AI 正在起卦占断...</div>
+      </div>
+      <div class="reasoning-steps" id="reasoningSteps"></div>
+      <div class="error-box" id="errorBox" style="display:none;"></div>
+      <div class="toggle-json" id="toggleJson" style="display:none;">[ 查看原始JSON ]</div>
+      <div class="json-raw" id="jsonRaw"></div>
+    </div>
+
+    <div class="card" id="stageClues">
+      <div class="card-title">多 维 线 索</div>
+      <div class="loading-area" id="clueLoading" style="display:none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在收集线索...</div>
+      </div>
+      <div class="clue-board" id="clueBoard"></div>
+    </div>
+
+    <div class="card" id="stageGuess">
+      <div class="card-title">猜 测</div>
+      <div class="guess-area">
+        <div class="guess-label">AI 推 断 此 物 为</div>
+        <div class="guess-text" id="guessText">⋯</div>
+        <div class="guess-corr" id="guessCorr"></div>
+      </div>
+    </div>
+
+    <div class="card" id="stageReasoningPath">
+      <div class="card-title">思 路 展 示</div>
+      <div class="reasoning-path" id="reasoningPathContent">
+        <div style="color:var(--text-secondary);font-size:12px;text-align:center;padding:8px 0;">等待 AI 生成思路...</div>
+      </div>
+    </div>
+
+    <div class="card" id="stageReveal">
+      <div class="card-title">揭 晓</div>
+      <div class="reveal-area">
+        <div class="prompt">谜底究竟是什么？输入真实物品名称</div>
+        <input type="text" id="realAnswer" placeholder="请输入真实谜底..." maxlength="20">
+        <div class="btn-group">
+          <button class="btn btn-hit" id="btnHit">✓ 猜对了</button>
+          <button class="btn btn-miss" id="btnMiss">✗ 猜错了</button>
+        </div>
+        <div class="reveal-result" id="revealResult"></div>
+      </div>
+    </div>
+
+    <div class="card" id="stageHistory">
+      <div class="card-title">对局记录</div>
+      <div class="history-list" id="historyList">
+        <div style="text-align:center;color:var(--text-secondary);font-size:12px;padding:16px 0;">暂无对局记录</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/meihua.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/log.js"></script>
+</body>
+</html>
